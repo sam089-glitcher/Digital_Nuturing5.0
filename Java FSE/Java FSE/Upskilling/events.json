@@ -1,0 +1,66 @@
+[
+    {
+        "id": 1,
+        "name": "Music Festival",
+        "category": "Music",
+        "location": "City Park",
+        "date": "2026-07-20",
+        "seats": 50
+    },
+    {
+        "id": 2,
+        "name": "Sports Day",
+        "category": "Sports",
+        "location": "Community Stadium",
+        "date": "2026-07-25",
+        "seats": 30
+    },
+    {
+        "id": 3,
+        "name": "Food Festival",
+        "category": "Food",
+        "location": "Town Hall",
+        "date": "2026-08-01",
+        "seats": 40
+    },
+    {
+        "id": 4,
+        "name": "Art Exhibition",
+        "category": "Art",
+        "location": "City Art Gallery",
+        "date": "2026-08-10",
+        "seats": 20
+    },
+    {
+        "id": 5,
+        "name": "Coding Workshop",
+        "category": "Workshop",
+        "location": "Community Center",
+        "date": "2026-08-15",
+        "seats": 25
+    },
+    {
+        "id": 6,
+        "name": "Photography Workshop",
+        "category": "Workshop",
+        "location": "Library Hall",
+        "date": "2026-09-05",
+        "seats": 35
+    },
+    {
+        "id": 7,
+        "name": "Yoga Camp",
+        "category": "Health",
+        "location": "Central Park",
+        "date": "2026-09-20",
+        "seats": 45
+    },
+    {
+        "id": 8,
+        "name": "Blood Donation Camp",
+        "category": "Health",
+        "location": "Government Hospital",
+        "date": "2026-10-05",
+        "seats": 100
+    }
+]
