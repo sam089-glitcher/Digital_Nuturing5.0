@@ -1,101 +1,92 @@
--- Exercise 3 : Stored Procedures
+-- Exercise 3: Stored Procedures.
 
-------------------------------------------------------------
--- Scenario 1 : Process Monthly Interest
-------------------------------------------------------------
+-- Scenario 1: The bank needs to process monthly interest for all savings accounts.
 
-CREATE OR REPLACE PROCEDURE ProcessMonthlyInterest
-IS
+DELIMITER $$
+
+CREATE PROCEDURE ProcessMonthlyInterest()
 BEGIN
     UPDATE Accounts
     SET Balance = Balance + (Balance * 0.01)
     WHERE AccountType = 'Savings';
 
-    COMMIT;
+    SELECT 'Monthly interest applied successfully.' AS Message;
+END$$
 
-    DBMS_OUTPUT.PUT_LINE('Monthly interest processed successfully.');
-END;
-/
+DELIMITER ;
 
-------------------------------------------------------------
--- Scenario 2 : Update Employee Bonus
-------------------------------------------------------------
+CALL ProcessMonthlyInterest();
 
-CREATE OR REPLACE PROCEDURE UpdateEmployeeBonus (
-    p_department IN VARCHAR2,
-    p_bonusPercent IN NUMBER
+SELECT AccountID, CustomerID, AccountType, Balance
+FROM Accounts
+WHERE AccountType = 'Savings';
+
+-- Scenario 2: The bank wants to implement a bonus scheme for employees based on their performance.
+
+DELIMITER $$
+
+CREATE PROCEDURE UpdateEmployeeBonus(
+    IN DeptName VARCHAR(50),
+    IN BonusPercentage DECIMAL(5,2)
 )
-IS
 BEGIN
     UPDATE Employees
-    SET Salary = Salary + (Salary * p_bonusPercent / 100)
-    WHERE Department = p_department;
+    SET Salary = Salary + (Salary * BonusPercentage / 100)
+    WHERE Department = DeptName;
 
-    COMMIT;
+    SELECT 'Employee bonus updated successfully.' AS Message;
+END$$
 
-    DBMS_OUTPUT.PUT_LINE('Employee bonus updated successfully.');
-END;
-/
+DELIMITER ;
 
-------------------------------------------------------------
--- Scenario 3 : Transfer Funds
-------------------------------------------------------------
+CALL UpdateEmployeeBonus('IT', 10);
 
-CREATE OR REPLACE PROCEDURE TransferFunds (
-    p_fromAccount IN NUMBER,
-    p_toAccount   IN NUMBER,
-    p_amount      IN NUMBER
+SELECT EmployeeID,
+       Name,
+       Department,
+       Salary
+FROM Employees
+WHERE Department = 'IT';
+
+-- Scenario 3: Customers should be able to transfer funds between their accounts.
+
+DELIMITER $$
+
+CREATE PROCEDURE TransferFunds(
+    IN FromAccount INT,
+    IN ToAccount INT,
+    IN TransferAmount DECIMAL(10,2)
 )
-IS
-    v_balance NUMBER;
 BEGIN
-    -- Get source account balance
-    SELECT Balance
-    INTO v_balance
-    FROM Accounts
-    WHERE AccountID = p_fromAccount;
+    DECLARE SourceBalance DECIMAL(10,2);
 
-    -- Check sufficient balance
-    IF v_balance < p_amount THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Insufficient balance.');
+    SELECT Balance
+    INTO SourceBalance
+    FROM Accounts
+    WHERE AccountID = FromAccount;
+
+    IF SourceBalance >= TransferAmount THEN
+
+        UPDATE Accounts
+        SET Balance = Balance - TransferAmount
+        WHERE AccountID = FromAccount;
+
+        UPDATE Accounts
+        SET Balance = Balance + TransferAmount
+        WHERE AccountID = ToAccount;
+
+        SELECT 'Funds transferred successfully.' AS Message;
+
+    ELSE
+        SELECT 'Insufficient balance. Transfer failed.' AS Message;
     END IF;
 
-    -- Debit source account
-    UPDATE Accounts
-    SET Balance = Balance - p_amount
-    WHERE AccountID = p_fromAccount;
+END$$
 
-    -- Credit destination account
-    UPDATE Accounts
-    SET Balance = Balance + p_amount
-    WHERE AccountID = p_toAccount;
+DELIMITER ;
 
-    COMMIT;
+CALL TransferFunds(1, 2, 500);
 
-    DBMS_OUTPUT.PUT_LINE('Funds transferred successfully.');
-
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Transfer failed: ' || SQLERRM);
-END;
-/
-
-------------------------------------------------------------
--- Test Procedure Calls (Optional)
-------------------------------------------------------------
-
-BEGIN
-    ProcessMonthlyInterest;
-END;
-/
-
-BEGIN
-    UpdateEmployeeBonus('IT', 10);
-END;
-/
-
-BEGIN
-    TransferFunds(101, 102, 5000);
-END;
-/
+SELECT AccountID, Balance
+FROM Accounts
+WHERE AccountID IN (1, 2);

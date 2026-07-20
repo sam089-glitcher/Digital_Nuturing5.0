@@ -1,109 +1,87 @@
--- Exercise 4 : Functions
+-- Exercise 4: Functions.
 
-------------------------------------------------------------
--- Scenario 1 : Calculate Customer Age
-------------------------------------------------------------
+-- Scenario 1: Calculate the age of customers for eligibility checks.
 
-CREATE OR REPLACE FUNCTION CalculateAge (
-    p_dob IN DATE
-)
-RETURN NUMBER
-IS
-    v_age NUMBER;
+DELIMITER $$
+
+CREATE FUNCTION CalculateAge(DateOfBirth DATE)
+RETURNS INT
+DETERMINISTIC
 BEGIN
-    v_age := FLOOR(MONTHS_BETWEEN(SYSDATE, p_dob) / 12);
+    RETURN TIMESTAMPDIFF(YEAR, DateOfBirth, CURDATE());
+END$$
 
-    RETURN v_age;
-END;
-/
+DELIMITER ;
 
-------------------------------------------------------------
--- Scenario 2 : Calculate Monthly Loan Installment
-------------------------------------------------------------
+SELECT CustomerID,
+       Name,
+       DOB,
+       CalculateAge(DOB) AS Age
+FROM Customers;
 
-CREATE OR REPLACE FUNCTION CalculateMonthlyInstallment (
-    p_loanAmount IN NUMBER,
-    p_interestRate IN NUMBER,
-    p_years IN NUMBER
+SELECT CalculateAge('1985-05-15') AS Age;
+
+-- Scenario 2: The bank needs to compute the monthly installment for a loan.
+
+DELIMITER $$
+
+CREATE FUNCTION CalculateMonthlyInstallment(
+    LoanAmount DECIMAL(10,2),
+    InterestRate DECIMAL(5,2),
+    LoanDuration INT
 )
-RETURN NUMBER
-IS
-    v_monthlyInstallment NUMBER;
-    v_monthlyRate NUMBER;
-    v_months NUMBER;
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
 BEGIN
-    v_monthlyRate := (p_interestRate / 100) / 12;
-    v_months := p_years * 12;
+    DECLARE MonthlyInstallment DECIMAL(10,2);
 
-    IF v_monthlyRate = 0 THEN
-        v_monthlyInstallment := p_loanAmount / v_months;
-    ELSE
-        v_monthlyInstallment :=
-            (p_loanAmount * v_monthlyRate * POWER(1 + v_monthlyRate, v_months))
-            /
-            (POWER(1 + v_monthlyRate, v_months) - 1);
-    END IF;
+    SET MonthlyInstallment =
+        (LoanAmount + (LoanAmount * InterestRate * LoanDuration / 100))
+        / (LoanDuration * 12);
 
-    RETURN ROUND(v_monthlyInstallment, 2);
-END;
-/
+    RETURN MonthlyInstallment;
+END$$
 
-------------------------------------------------------------
--- Scenario 3 : Check Sufficient Balance
-------------------------------------------------------------
+DELIMITER ;
 
-CREATE OR REPLACE FUNCTION HasSufficientBalance (
-    p_accountId IN NUMBER,
-    p_amount IN NUMBER
+SELECT CalculateMonthlyInstallment(5000, 5, 5) AS MonthlyInstallment;
+
+SELECT LoanID,
+       LoanAmount,
+       InterestRate,
+       CalculateMonthlyInstallment(
+           LoanAmount,
+           InterestRate,
+           TIMESTAMPDIFF(YEAR, StartDate, EndDate)
+       ) AS MonthlyInstallment
+FROM Loans;
+
+-- Scenario 3: Check if a customer has sufficient balance before making a transaction.
+
+DELIMITER $$
+
+CREATE FUNCTION HasSufficientBalance(
+    AccID INT,
+    Amount DECIMAL(10,2)
 )
-RETURN BOOLEAN
-IS
-    v_balance NUMBER;
+RETURNS BOOLEAN
+DETERMINISTIC
 BEGIN
+    DECLARE CurrentBalance DECIMAL(10,2);
+
     SELECT Balance
-    INTO v_balance
+    INTO CurrentBalance
     FROM Accounts
-    WHERE AccountID = p_accountId;
+    WHERE AccountID = AccID;
 
-    RETURN v_balance >= p_amount;
+    RETURN CurrentBalance >= Amount;
+END$$
 
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RETURN FALSE;
-END;
-/
+DELIMITER ;
 
-------------------------------------------------------------
--- Test Functions
-------------------------------------------------------------
+SELECT HasSufficientBalance(1, 500) AS Result;
 
--- Test CalculateAge
-BEGIN
-    DBMS_OUTPUT.PUT_LINE(
-        'Age: ' || CalculateAge(TO_DATE('15-08-1995','DD-MM-YYYY'))
-    );
-END;
-/
-
--- Test CalculateMonthlyInstallment
-BEGIN
-    DBMS_OUTPUT.PUT_LINE(
-        'Monthly Installment: ' ||
-        CalculateMonthlyInstallment(500000, 8.5, 10)
-    );
-END;
-/
-
--- Test HasSufficientBalance
-DECLARE
-    v_result BOOLEAN;
-BEGIN
-    v_result := HasSufficientBalance(101, 5000);
-
-    IF v_result THEN
-        DBMS_OUTPUT.PUT_LINE('Sufficient Balance');
-    ELSE
-        DBMS_OUTPUT.PUT_LINE('Insufficient Balance');
-    END IF;
-END;
-/
+SELECT AccountID,
+       Balance,
+       HasSufficientBalance(AccountID, 500) AS HasBalance
+FROM Accounts;

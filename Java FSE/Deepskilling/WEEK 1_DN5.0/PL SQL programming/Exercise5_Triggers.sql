@@ -1,85 +1,113 @@
--- Exercise 5 : Triggers
+-- Exercise 5: Triggers
 
-------------------------------------------------------------
--- Scenario 1 : Update Customer Last Modified Date
-------------------------------------------------------------
+-- Scenario 1: Automatically update the last modified date when a customer's record is updated.
 
-CREATE OR REPLACE TRIGGER UpdateCustomerLastModified
-BEFORE UPDATE
-ON Customers
+DELIMITER $$
+
+CREATE TRIGGER UpdateCustomerLastModified
+BEFORE UPDATE ON Customers
 FOR EACH ROW
 BEGIN
-    :NEW.LastModified := SYSDATE;
-END;
-/
+    SET NEW.LastModified = CURDATE();
+END$$
 
-------------------------------------------------------------
--- Scenario 2 : Log Transactions into AuditLog
-------------------------------------------------------------
+DELIMITER ;
 
-CREATE OR REPLACE TRIGGER LogTransaction
-AFTER INSERT
-ON Transactions
+UPDATE Customers
+SET Balance = 2000
+WHERE CustomerID = 1;
+
+SELECT CustomerID,
+       Name,
+       Balance,
+       LastModified
+FROM Customers
+WHERE CustomerID = 1;
+
+-- Scenario 2: Maintain an audit log for all transactions.
+
+DELIMITER $$
+
+CREATE TRIGGER LogTransaction
+AFTER INSERT ON Transactions
 FOR EACH ROW
 BEGIN
-    INSERT INTO AuditLog
-    (
+    INSERT INTO AuditLog (
         TransactionID,
         AccountID,
+        TransactionDate,
         Amount,
         TransactionType,
         LogDate
     )
-    VALUES
-    (
-        :NEW.TransactionID,
-        :NEW.AccountID,
-        :NEW.Amount,
-        :NEW.TransactionType,
-        SYSDATE
+    VALUES (
+        NEW.TransactionID,
+        NEW.AccountID,
+        NEW.TransactionDate,
+        NEW.Amount,
+        NEW.TransactionType,
+        NOW()
     );
-END;
-/
+END$$
 
-------------------------------------------------------------
--- Scenario 3 : Check Deposit and Withdrawal Rules
-------------------------------------------------------------
+DELIMITER ;
 
-CREATE OR REPLACE TRIGGER CheckTransactionRules
-BEFORE INSERT
-ON Transactions
+INSERT INTO Transactions (
+    TransactionID,
+    AccountID,
+    TransactionDate,
+    Amount,
+    TransactionType
+)
+VALUES (
+    3,
+    1,
+    CURDATE(),
+    500,
+    'Deposit'
+);
+
+SELECT * FROM AuditLog;
+
+-- Scenario 3: Enforce business rules on deposits and withdrawals.
+
+DELIMITER $$
+
+CREATE TRIGGER CheckTransactionRules
+BEFORE INSERT ON Transactions
 FOR EACH ROW
-DECLARE
-    v_balance NUMBER;
 BEGIN
-    -- Deposit must be positive
-    IF :NEW.TransactionType = 'Deposit' THEN
+    DECLARE CurrentBalance DECIMAL(10,2);
 
-        IF :NEW.Amount <= 0 THEN
-            RAISE_APPLICATION_ERROR(
-                -20001,
-                'Deposit amount must be greater than zero.'
-            );
-        END IF;
+    SELECT Balance
+    INTO CurrentBalance
+    FROM Accounts
+    WHERE AccountID = NEW.AccountID;
 
+    IF NEW.TransactionType = 'Withdrawal' AND NEW.Amount > CurrentBalance THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Withdrawal amount exceeds account balance.';
     END IF;
 
-    -- Withdrawal rules
-    IF :NEW.TransactionType = 'Withdrawal' THEN
-
-        SELECT Balance
-        INTO v_balance
-        FROM Accounts
-        WHERE AccountID = :NEW.AccountID;
-
-        IF :NEW.Amount > v_balance THEN
-            RAISE_APPLICATION_ERROR(
-                -20002,
-                'Insufficient balance for withdrawal.'
-            );
-        END IF;
-
+    IF NEW.TransactionType = 'Deposit' AND NEW.Amount <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Deposit amount must be positive.';
     END IF;
+END$$
 
-END;
-/
+DELIMITER ;
+
+INSERT INTO Transactions
+(TransactionID, AccountID, TransactionDate, Amount, TransactionType)
+VALUES
+(10, 1, CURDATE(), 500, 'Deposit');
+
+INSERT INTO Transactions
+(TransactionID, AccountID, TransactionDate, Amount, TransactionType)
+VALUES
+(4, 1, CURDATE(), -100, 'Deposit');
+
+INSERT INTO Transactions
+(TransactionID, AccountID, TransactionDate, Amount, TransactionType)
+VALUES
+(5, 1, CURDATE(), 5000, 'Withdrawal');

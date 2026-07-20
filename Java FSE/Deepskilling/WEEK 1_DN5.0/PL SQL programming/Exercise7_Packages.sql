@@ -1,298 +1,232 @@
--- Exercise 7 : Packages
+-- Exercise 7: Packages
 
-------------------------------------------------------------
--- Scenario 1 : CustomerManagement Package
-------------------------------------------------------------
+-- Scenario 1: Group all customer-related procedures and functions into a package.
 
--- Package Specification
-CREATE OR REPLACE PACKAGE CustomerManagement AS
+-- Procedure: UpdateCustomerDetails
+DELIMITER $$
 
-    PROCEDURE AddCustomer(
-        p_CustomerID NUMBER,
-        p_Name VARCHAR2,
-        p_DOB DATE,
-        p_Balance NUMBER
-    );
-
-    PROCEDURE UpdateCustomer(
-        p_CustomerID NUMBER,
-        p_Name VARCHAR2,
-        p_Balance NUMBER
-    );
-
-    FUNCTION GetCustomerBalance(
-        p_CustomerID NUMBER
-    ) RETURN NUMBER;
-
-END CustomerManagement;
-/
-
--- Package Body
-CREATE OR REPLACE PACKAGE BODY CustomerManagement AS
-
-    PROCEDURE AddCustomer(
-        p_CustomerID NUMBER,
-        p_Name VARCHAR2,
-        p_DOB DATE,
-        p_Balance NUMBER
-    ) IS
-    BEGIN
-        INSERT INTO Customers
-        VALUES (
-            p_CustomerID,
-            p_Name,
-            p_DOB,
-            p_Balance,
-            SYSDATE
-        );
-    END;
-
-    PROCEDURE UpdateCustomer(
-        p_CustomerID NUMBER,
-        p_Name VARCHAR2,
-        p_Balance NUMBER
-    ) IS
-    BEGIN
-        UPDATE Customers
-        SET Name = p_Name,
-            Balance = p_Balance,
-            LastModified = SYSDATE
-        WHERE CustomerID = p_CustomerID;
-    END;
-
-    FUNCTION GetCustomerBalance(
-        p_CustomerID NUMBER
-    ) RETURN NUMBER
-    IS
-        v_balance NUMBER;
-    BEGIN
-        SELECT Balance
-        INTO v_balance
-        FROM Customers
-        WHERE CustomerID = p_CustomerID;
-
-        RETURN v_balance;
-    END;
-
-END CustomerManagement;
-/
-
-------------------------------------------------------------
--- Scenario 2 : EmployeeManagement Package
-------------------------------------------------------------
-
--- Package Specification
-CREATE OR REPLACE PACKAGE EmployeeManagement AS
-
-    PROCEDURE HireEmployee(
-        p_EmployeeID NUMBER,
-        p_Name VARCHAR2,
-        p_Position VARCHAR2,
-        p_Salary NUMBER,
-        p_Department VARCHAR2,
-        p_HireDate DATE
-    );
-
-    PROCEDURE UpdateEmployee(
-        p_EmployeeID NUMBER,
-        p_Position VARCHAR2,
-        p_Salary NUMBER
-    );
-
-    FUNCTION CalculateAnnualSalary(
-        p_EmployeeID NUMBER
-    ) RETURN NUMBER;
-
-END EmployeeManagement;
-/
-
--- Package Body
-CREATE OR REPLACE PACKAGE BODY EmployeeManagement AS
-
-    PROCEDURE HireEmployee(
-        p_EmployeeID NUMBER,
-        p_Name VARCHAR2,
-        p_Position VARCHAR2,
-        p_Salary NUMBER,
-        p_Department VARCHAR2,
-        p_HireDate DATE
-    ) IS
-    BEGIN
-        INSERT INTO Employees
-        VALUES (
-            p_EmployeeID,
-            p_Name,
-            p_Position,
-            p_Salary,
-            p_Department,
-            p_HireDate
-        );
-    END;
-
-    PROCEDURE UpdateEmployee(
-        p_EmployeeID NUMBER,
-        p_Position VARCHAR2,
-        p_Salary NUMBER
-    ) IS
-    BEGIN
-        UPDATE Employees
-        SET Position = p_Position,
-            Salary = p_Salary
-        WHERE EmployeeID = p_EmployeeID;
-    END;
-
-    FUNCTION CalculateAnnualSalary(
-        p_EmployeeID NUMBER
-    ) RETURN NUMBER
-    IS
-        v_salary NUMBER;
-    BEGIN
-        SELECT Salary
-        INTO v_salary
-        FROM Employees
-        WHERE EmployeeID = p_EmployeeID;
-
-        RETURN v_salary * 12;
-    END;
-
-END EmployeeManagement;
-/
-
-------------------------------------------------------------
--- Scenario 3 : AccountOperations Package
-------------------------------------------------------------
-
--- Package Specification
-CREATE OR REPLACE PACKAGE AccountOperations AS
-
-    PROCEDURE OpenAccount(
-        p_AccountID NUMBER,
-        p_CustomerID NUMBER,
-        p_AccountType VARCHAR2,
-        p_Balance NUMBER
-    );
-
-    PROCEDURE CloseAccount(
-        p_AccountID NUMBER
-    );
-
-    FUNCTION GetTotalBalance(
-        p_CustomerID NUMBER
-    ) RETURN NUMBER;
-
-END AccountOperations;
-/
-
--- Package Body
-CREATE OR REPLACE PACKAGE BODY AccountOperations AS
-
-    PROCEDURE OpenAccount(
-        p_AccountID NUMBER,
-        p_CustomerID NUMBER,
-        p_AccountType VARCHAR2,
-        p_Balance NUMBER
-    ) IS
-    BEGIN
-        INSERT INTO Accounts
-        VALUES (
-            p_AccountID,
-            p_CustomerID,
-            p_AccountType,
-            p_Balance,
-            SYSDATE
-        );
-    END;
-
-    PROCEDURE CloseAccount(
-        p_AccountID NUMBER
-    ) IS
-    BEGIN
-        DELETE FROM Accounts
-        WHERE AccountID = p_AccountID;
-    END;
-
-    FUNCTION GetTotalBalance(
-        p_CustomerID NUMBER
-    ) RETURN NUMBER
-    IS
-        v_total NUMBER;
-    BEGIN
-        SELECT SUM(Balance)
-        INTO v_total
-        FROM Accounts
-        WHERE CustomerID = p_CustomerID;
-
-        RETURN NVL(v_total,0);
-    END;
-
-END AccountOperations;
-/
-
-------------------------------------------------------------
--- Test Calls
-------------------------------------------------------------
-
+CREATE PROCEDURE UpdateCustomerDetails(
+    IN CustID INT,
+    IN CustName VARCHAR(100),
+    IN CustDOB DATE,
+    IN CustBalance DECIMAL(10,2)
+)
 BEGIN
-    CustomerManagement.AddCustomer(
-        3,
-        'Rahul Sharma',
-        TO_DATE('1998-10-10','YYYY-MM-DD'),
-        2500
+    UPDATE Customers
+    SET Name = CustName,
+        DOB = CustDOB,
+        Balance = CustBalance,
+        LastModified = CURDATE()
+    WHERE CustomerID = CustID;
+END$$
+
+DELIMITER ;
+
+-- Function: GetCustomerBalance
+
+DELIMITER $$
+
+CREATE FUNCTION GetCustomerBalance(
+    CustID INT
+)
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE CustBalance DECIMAL(10,2);
+
+    SELECT Balance
+    INTO CustBalance
+    FROM Customers
+    WHERE CustomerID = CustID;
+
+    RETURN CustBalance;
+END$$
+
+DELIMITER ;
+
+-- Test Them: 
+CALL UpdateCustomerDetails(1, 'John Doe', '1985-05-15', 5000);
+
+SELECT GetCustomerBalance(1);
+
+-- Scenario 2: Create a package to manage employee data.
+
+-- Procedure 1: HireNewEmployee
+
+DELIMITER $$
+
+CREATE PROCEDURE HireNewEmployee(
+    IN EmpID INT,
+    IN EmpName VARCHAR(100),
+    IN EmpPosition VARCHAR(50),
+    IN EmpSalary DECIMAL(10,2),
+    IN EmpDepartment VARCHAR(50),
+    IN EmpHireDate DATE
+)
+BEGIN
+    INSERT INTO Employees(
+        EmployeeID,
+        Name,
+        Position,
+        Salary,
+        Department,
+        HireDate
+    )
+    VALUES(
+        EmpID,
+        EmpName,
+        EmpPosition,
+        EmpSalary,
+        EmpDepartment,
+        EmpHireDate
     );
-END;
-/
+END$$
 
+DELIMITER ;
+
+-- Procedure 2: UpdateEmployeeDetails
+
+DELIMITER $$
+
+CREATE PROCEDURE UpdateEmployeeDetails(
+    IN EmpID INT,
+    IN EmpName VARCHAR(100),
+    IN EmpPosition VARCHAR(50),
+    IN EmpSalary DECIMAL(10,2),
+    IN EmpDepartment VARCHAR(50)
+)
 BEGIN
-    CustomerManagement.UpdateCustomer(
-        3,
-        'Rahul Sharma',
-        5000
+    UPDATE Employees
+    SET Name = EmpName,
+        Position = EmpPosition,
+        Salary = EmpSalary,
+        Department = EmpDepartment
+    WHERE EmployeeID = EmpID;
+END$$
+
+DELIMITER ;
+
+-- Function: CalculateAnnualSalary
+
+DELIMITER $$
+
+CREATE FUNCTION CalculateAnnualSalary(
+    EmpID INT
+)
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE AnnualSalary DECIMAL(10,2);
+
+    SELECT Salary * 12
+    INTO AnnualSalary
+    FROM Employees
+    WHERE EmployeeID = EmpID;
+
+    RETURN AnnualSalary;
+END$$
+
+DELIMITER ;
+
+-- Test the procedures and function:
+-- Hire a new employee
+CALL HireNewEmployee(
+    3,
+    'Rahul Sharma',
+    'Analyst',
+    50000,
+    'Finance',
+    '2026-07-20'
+);
+
+-- Update employee details
+CALL UpdateEmployeeDetails(
+    3,
+    'Rahul Verma',
+    'Senior Analyst',
+    60000,
+    'Finance'
+);
+
+-- Calculate annual salary
+SELECT CalculateAnnualSalary(3) AS AnnualSalary;
+
+
+-- Scenario 3: Group all account-related operations into a package.
+
+-- Procedure 1: OpenNewAccount:
+DELIMITER $$
+
+CREATE PROCEDURE OpenNewAccount(
+    IN AccID INT,
+    IN CustID INT,
+    IN AccType VARCHAR(20),
+    IN AccBalance DECIMAL(10,2)
+)
+BEGIN
+    INSERT INTO Accounts(
+        AccountID,
+        CustomerID,
+        AccountType,
+        Balance,
+        LastModified
+    )
+    VALUES(
+        AccID,
+        CustID,
+        AccType,
+        AccBalance,
+        CURDATE()
     );
-END;
-/
+END$$
 
-DECLARE
-    v_balance NUMBER;
-BEGIN
-    v_balance := CustomerManagement.GetCustomerBalance(1);
-    DBMS_OUTPUT.PUT_LINE('Customer Balance: ' || v_balance);
-END;
-/
+DELIMITER ;
 
-BEGIN
-    EmployeeManagement.HireEmployee(
-        3,
-        'David',
-        'Analyst',
-        50000,
-        'Finance',
-        SYSDATE
-    );
-END;
-/
+-- Procedure 2: CloseAccount:
+DELIMITER $$
 
-DECLARE
-    v_salary NUMBER;
+CREATE PROCEDURE CloseAccount(
+    IN AccID INT
+)
 BEGIN
-    v_salary := EmployeeManagement.CalculateAnnualSalary(1);
-    DBMS_OUTPUT.PUT_LINE('Annual Salary: ' || v_salary);
-END;
-/
+    DELETE FROM Accounts
+    WHERE AccountID = AccID;
+END$$
 
-BEGIN
-    AccountOperations.OpenAccount(
-        3,
-        1,
-        'Savings',
-        5000
-    );
-END;
-/
+DELIMITER ;
 
-DECLARE
-    v_total NUMBER;
+-- Function: GetTotalBalance:
+DELIMITER $$
+
+CREATE FUNCTION GetTotalBalance(
+    CustID INT
+)
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
 BEGIN
-    v_total := AccountOperations.GetTotalBalance(1);
-    DBMS_OUTPUT.PUT_LINE('Total Balance: ' || v_total);
-END;
-/ 
+    DECLARE TotalBal DECIMAL(10,2);
+
+    SELECT SUM(Balance)
+    INTO TotalBal
+    FROM Accounts
+    WHERE CustomerID = CustID;
+
+    RETURN IFNULL(TotalBal, 0);
+END$$
+
+DELIMITER ;
+
+-- Test the procedures and function:
+-- Open a new account
+CALL OpenNewAccount(
+    3,
+    1,
+    'Savings',
+    5000
+);
+
+-- Close an account
+CALL CloseAccount(3);
+
+-- Get the total balance of a customer
+SELECT GetTotalBalance(1) AS TotalBalance;

@@ -1,129 +1,118 @@
--- Exercise 2 : Error Handling
+-- Exercise 2: Error Handling
 
-------------------------------------------------------------
--- Scenario 1 : Safe Transfer of Funds
-------------------------------------------------------------
+-- Scenario 1: Handle exceptions during fund transfers between accounts.
 
-CREATE OR REPLACE PROCEDURE SafeTransferFunds (
-    p_fromAccount IN NUMBER,
-    p_toAccount   IN NUMBER,
-    p_amount      IN NUMBER
+DELIMITER $$
+
+CREATE PROCEDURE SafeTransferFunds(
+    IN FromAccount INT,
+    IN ToAccount INT,
+    IN TransferAmount DECIMAL(10,2)
 )
-IS
-    v_balance NUMBER;
 BEGIN
-    -- Check sender's balance
+    DECLARE SourceBalance DECIMAL(10,2);
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SELECT 'Error occurred. Transaction rolled back.' AS Message;
+    END;
+
+    START TRANSACTION;
+
     SELECT Balance
-    INTO v_balance
+    INTO SourceBalance
     FROM Accounts
-    WHERE AccountID = p_fromAccount;
+    WHERE AccountID = FromAccount;
 
-    IF v_balance < p_amount THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Insufficient funds.');
+    IF SourceBalance >= TransferAmount THEN
+
+        UPDATE Accounts
+        SET Balance = Balance - TransferAmount
+        WHERE AccountID = FromAccount;
+
+        UPDATE Accounts
+        SET Balance = Balance + TransferAmount
+        WHERE AccountID = ToAccount;
+
+        COMMIT;
+        SELECT 'Funds transferred successfully.' AS Message;
+
+    ELSE
+        ROLLBACK;
+        SELECT 'Insufficient funds. Transaction cancelled.' AS Message;
     END IF;
 
-    -- Deduct amount from sender
-    UPDATE Accounts
-    SET Balance = Balance - p_amount
-    WHERE AccountID = p_fromAccount;
+END$$
 
-    -- Add amount to receiver
-    UPDATE Accounts
-    SET Balance = Balance + p_amount
-    WHERE AccountID = p_toAccount;
+DELIMITER ;
 
-    COMMIT;
+CALL SafeTransferFunds(1, 2, 500);
 
-    DBMS_OUTPUT.PUT_LINE('Fund transfer completed successfully.');
+-- Scenario 2: Manage errors when updating employee salaries.
 
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Error during fund transfer: ' || SQLERRM);
-END;
-/
+DELIMITER $$
 
-------------------------------------------------------------
--- Scenario 2 : Update Employee Salary
-------------------------------------------------------------
-
-CREATE OR REPLACE PROCEDURE UpdateSalary (
-    p_employeeId IN NUMBER,
-    p_percentage IN NUMBER
+CREATE PROCEDURE UpdateSalary(
+    IN EmpID INT,
+    IN Percentage DECIMAL(5,2)
 )
-IS
-    v_count NUMBER;
 BEGIN
-    -- Check whether employee exists
+    DECLARE EmpCount INT;
+
     SELECT COUNT(*)
-    INTO v_count
+    INTO EmpCount
     FROM Employees
-    WHERE EmployeeID = p_employeeId;
+    WHERE EmployeeID = EmpID;
 
-    IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Employee ID does not exist.');
+    IF EmpCount = 0 THEN
+        SELECT 'Error: Employee ID does not exist.' AS Message;
+    ELSE
+        UPDATE Employees
+        SET Salary = Salary + (Salary * Percentage / 100)
+        WHERE EmployeeID = EmpID;
+
+        SELECT 'Salary updated successfully.' AS Message;
     END IF;
 
-    -- Update salary
-    UPDATE Employees
-    SET Salary = Salary + (Salary * p_percentage / 100)
-    WHERE EmployeeID = p_employeeId;
+END$$
 
-    COMMIT;
+DELIMITER ;
 
-    DBMS_OUTPUT.PUT_LINE('Salary updated successfully.');
+CALL UpdateSalary(1, 10);
 
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
+-- Scenario 3: Ensure data integrity when adding a new customer.
 
-------------------------------------------------------------
--- Scenario 3 : Add New Customer
-------------------------------------------------------------
+DELIMITER $$
 
-CREATE OR REPLACE PROCEDURE AddNewCustomer (
-    p_customerId   IN NUMBER,
-    p_customerName IN VARCHAR2,
-    p_balance      IN NUMBER
+CREATE PROCEDURE AddNewCustomer(
+    IN CustID INT,
+    IN CustName VARCHAR(100),
+    IN CustDOB DATE,
+    IN CustBalance DECIMAL(10,2)
 )
-IS
 BEGIN
-    INSERT INTO Customers (CustomerID, CustomerName, Balance)
-    VALUES (p_customerId, p_customerName, p_balance);
+    DECLARE CustCount INT;
 
-    COMMIT;
+    SELECT COUNT(*)
+    INTO CustCount
+    FROM Customers
+    WHERE CustomerID = CustID;
 
-    DBMS_OUTPUT.PUT_LINE('Customer added successfully.');
+    IF CustCount > 0 THEN
+        SELECT 'Error: Customer ID already exists. Insertion cancelled.' AS Message;
+    ELSE
+        INSERT INTO Customers(CustomerID, Name, DOB, Balance, LastModified)
+        VALUES(CustID, CustName, CustDOB, CustBalance, CURDATE());
 
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Error: Customer ID already exists.');
+        SELECT 'Customer added successfully.' AS Message;
+    END IF;
 
-    WHEN OTHERS THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Unexpected Error: ' || SQLERRM);
-END;
-/
+END$$
 
-------------------------------------------------------------
--- Test Procedure Calls (Optional)
-------------------------------------------------------------
+DELIMITER ;
 
-BEGIN
-    SafeTransferFunds(101, 102, 5000);
-END;
-/
+CALL AddNewCustomer(3, 'Rahul Sharma', '1998-04-15', 12000);
 
-BEGIN
-    UpdateSalary(1001, 10);
-END;
-/
-
-BEGIN
-    AddNewCustomer(201, 'Rahul Sharma', 15000);
-END;
-/
+-- checking duplicate.
+CALL AddNewCustomer(1, 'Rahul Sharma', '1998-04-15', 12000);

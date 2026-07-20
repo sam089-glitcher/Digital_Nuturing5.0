@@ -1,108 +1,151 @@
--- Exercise 6 : Cursors
+-- Exercise 6: Cursors
 
-------------------------------------------------------------
--- Scenario 1 : Generate Monthly Statements
-------------------------------------------------------------
+-- Scenario 1: Generate monthly statements for all customers.
 
-DECLARE
-    CURSOR GenerateMonthlyStatements IS
-        SELECT c.CustomerID,
-               c.CustomerName,
-               t.TransactionID,
-               t.TransactionDate,
-               t.Amount,
-               t.TransactionType
-        FROM Customers c
-        JOIN Transactions t
-        ON c.CustomerID = t.CustomerID
-        WHERE EXTRACT(MONTH FROM t.TransactionDate) = EXTRACT(MONTH FROM SYSDATE)
-          AND EXTRACT(YEAR FROM t.TransactionDate) = EXTRACT(YEAR FROM SYSDATE);
+DELIMITER $$
 
-    v_record GenerateMonthlyStatements%ROWTYPE;
-
+CREATE PROCEDURE GenerateMonthlyStatements()
 BEGIN
-    OPEN GenerateMonthlyStatements;
+    DECLARE Done INT DEFAULT FALSE;
+    DECLARE CustID INT;
+    DECLARE CustName VARCHAR(100);
+    DECLARE TransID INT;
+    DECLARE TransDate DATE;
+    DECLARE TransAmount DECIMAL(10,2);
+    DECLARE TransType VARCHAR(20);
 
-    LOOP
-        FETCH GenerateMonthlyStatements INTO v_record;
-        EXIT WHEN GenerateMonthlyStatements%NOTFOUND;
+    DECLARE StatementCursor CURSOR FOR
+    SELECT c.CustomerID,
+           c.Name,
+           t.TransactionID,
+           t.TransactionDate,
+           t.Amount,
+           t.TransactionType
+    FROM Customers c
+    JOIN Accounts a ON c.CustomerID = a.CustomerID
+    JOIN Transactions t ON a.AccountID = t.AccountID
+    WHERE MONTH(t.TransactionDate) = MONTH(CURDATE())
+      AND YEAR(t.TransactionDate) = YEAR(CURDATE());
 
-        DBMS_OUTPUT.PUT_LINE(
-            'Customer: ' || v_record.CustomerName ||
-            ' | Transaction ID: ' || v_record.TransactionID ||
-            ' | Type: ' || v_record.TransactionType ||
-            ' | Amount: ' || v_record.Amount
-        );
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET Done = TRUE;
 
+    OPEN StatementCursor;
+
+    ReadLoop: LOOP
+        FETCH StatementCursor
+        INTO CustID, CustName, TransID, TransDate, TransAmount, TransType;
+
+        IF Done THEN
+            LEAVE ReadLoop;
+        END IF;
+
+        SELECT CONCAT(
+            'Customer ID: ', CustID,
+            ', Name: ', CustName,
+            ', Transaction ID: ', TransID,
+            ', Date: ', TransDate,
+            ', Amount: ', TransAmount,
+            ', Type: ', TransType
+        ) AS MonthlyStatement;
     END LOOP;
 
-    CLOSE GenerateMonthlyStatements;
-END;
-/
+    CLOSE StatementCursor;
+END$$
 
-------------------------------------------------------------
--- Scenario 2 : Apply Annual Maintenance Fee
-------------------------------------------------------------
+DELIMITER ;
 
-DECLARE
-    CURSOR ApplyAnnualFee IS
-        SELECT AccountID, Balance
-        FROM Accounts
-        FOR UPDATE;
+CALL GenerateMonthlyStatements();
 
-    v_account ApplyAnnualFee%ROWTYPE;
-    v_fee NUMBER := 500;
+-- Scenario 2: Apply annual fee to all accounts.
 
+
+DELIMITER $$
+
+CREATE PROCEDURE ApplyAnnualFee()
 BEGIN
-    OPEN ApplyAnnualFee;
+    DECLARE Done INT DEFAULT FALSE;
+    DECLARE AccID INT;
+    DECLARE Fee DECIMAL(10,2) DEFAULT 100.00;
 
-    LOOP
-        FETCH ApplyAnnualFee INTO v_account;
-        EXIT WHEN ApplyAnnualFee%NOTFOUND;
+    DECLARE AccountCursor CURSOR FOR
+    SELECT AccountID
+    FROM Accounts;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET Done = TRUE;
+
+    OPEN AccountCursor;
+
+    ReadLoop: LOOP
+        FETCH AccountCursor INTO AccID;
+
+        IF Done THEN
+            LEAVE ReadLoop;
+        END IF;
 
         UPDATE Accounts
-        SET Balance = Balance - v_fee
-        WHERE CURRENT OF ApplyAnnualFee;
+        SET Balance = Balance - Fee
+        WHERE AccountID = AccID;
 
     END LOOP;
 
-    CLOSE ApplyAnnualFee;
+    CLOSE AccountCursor;
 
-    COMMIT;
+    SELECT 'Annual maintenance fee applied successfully.' AS Message;
+END$$
 
-    DBMS_OUTPUT.PUT_LINE('Annual maintenance fee applied successfully.');
-END;
-/
+DELIMITER ;
 
-------------------------------------------------------------
--- Scenario 3 : Update Loan Interest Rates
-------------------------------------------------------------
+CALL ApplyAnnualFee();
 
-DECLARE
-    CURSOR UpdateLoanInterestRates IS
-        SELECT LoanID, InterestRate
-        FROM Loans
-        FOR UPDATE;
+SELECT AccountID,
+       CustomerID,
+       AccountType,
+       Balance
+FROM Accounts;
 
-    v_loan UpdateLoanInterestRates%ROWTYPE;
+-- Scenario 3: Update the interest rate for all loans based on a new policy.
 
+DELIMITER $$
+
+CREATE PROCEDURE UpdateLoanInterestRates()
 BEGIN
-    OPEN UpdateLoanInterestRates;
+    DECLARE Done INT DEFAULT FALSE;
+    DECLARE LoanIDVar INT;
+    DECLARE CurrentRate DECIMAL(5,2);
 
-    LOOP
-        FETCH UpdateLoanInterestRates INTO v_loan;
-        EXIT WHEN UpdateLoanInterestRates%NOTFOUND;
+    DECLARE LoanCursor CURSOR FOR
+    SELECT LoanID, InterestRate
+    FROM Loans;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET Done = TRUE;
+
+    OPEN LoanCursor;
+
+    ReadLoop: LOOP
+        FETCH LoanCursor INTO LoanIDVar, CurrentRate;
+
+        IF Done THEN
+            LEAVE ReadLoop;
+        END IF;
 
         UPDATE Loans
-        SET InterestRate = InterestRate + 0.5
-        WHERE CURRENT OF UpdateLoanInterestRates;
+        SET InterestRate = CurrentRate + 0.50
+        WHERE LoanID = LoanIDVar;
 
     END LOOP;
 
-    CLOSE UpdateLoanInterestRates;
+    CLOSE LoanCursor;
 
-    COMMIT;
+    SELECT 'Loan interest rates updated successfully.' AS Message;
+END$$
 
-    DBMS_OUTPUT.PUT_LINE('Loan interest rates updated successfully.');
-END;
-/
+DELIMITER ;
+
+CALL UpdateLoanInterestRates();
+
+SELECT LoanID,
+       CustomerID,
+       InterestRate
+FROM Loans;
+
+
