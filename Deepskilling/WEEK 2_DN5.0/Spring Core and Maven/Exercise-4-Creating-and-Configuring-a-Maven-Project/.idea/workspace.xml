@@ -5,10 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cb0e5db9-9540-4fbd-80e7-e45213da19b4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/LibraryManagementex4/src/main/java/com/library/management/BookRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LibraryManagementex4/src/main/java/com/library/management/BookService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LibraryManagementex4/src/main/resources/applicationContext.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Output/Exercise4execute.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LibraryManagementex4/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/LibraryManagementex4/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LibraryManagementex4/src/main/java/com/library/management/BookRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/LibraryManagementex4/src/main/java/com/library/management/BookRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LibraryManagementex4/src/main/java/com/library/management/BookService.java" beforeDir="false" afterPath="$PROJECT_DIR$/LibraryManagementex4/src/main/java/com/library/management/BookService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LibraryManagementex4/src/main/java/com/library/management/LibraryManagementApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/LibraryManagementex4/src/main/java/com/library/management/LibraryManagementApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LibraryManagementex4/src/main/resources/applicationContext.xml" beforeDir="false" afterPath="$PROJECT_DIR$/LibraryManagementex4/src/main/resources/applicationContext.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

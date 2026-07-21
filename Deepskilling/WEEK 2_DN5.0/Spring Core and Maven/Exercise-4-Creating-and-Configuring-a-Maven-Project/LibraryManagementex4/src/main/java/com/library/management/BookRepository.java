@@ -3,6 +3,7 @@ package com.library.management;
 public class BookRepository {
 
     public void displayRepository() {
-        System.out.println("Book Repository is working.");
+        System.out.println("Book Repository Bean Created Successfully.");
+        System.out.println("Fetching books from the library database...");
     }
 }

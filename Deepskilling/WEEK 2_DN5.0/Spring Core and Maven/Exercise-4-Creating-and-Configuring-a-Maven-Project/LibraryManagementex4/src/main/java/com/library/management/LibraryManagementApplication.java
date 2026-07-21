@@ -14,5 +14,7 @@ public class LibraryManagementApplication {
                 context.getBean("bookService", BookService.class);
 
         service.displayService();
+
+        ((ClassPathXmlApplicationContext) context).close();
     }
 }
