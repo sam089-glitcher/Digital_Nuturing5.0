@@ -28,75 +28,54 @@ public class OrmLearnApplication {
 
 		LOGGER.info("Inside main");
 
-		testGetAllCountries();
+		// Uncomment ONLY ONE method at a time
 
-		testGetCountry();
+		testSearchCountry();
 
-		testAddCountry();
+		// testSearchCountrySorted();
 
-		testUpdateCountry();
-
-		testDeleteCountry();
-
-		testSearchCountries();
+		// testSearchCountryStartingWith();
 	}
 
-	private static void testGetAllCountries() {
+	/**
+	 * Search countries containing "ou"
+	 */
+	private static void testSearchCountry() {
 
-		LOGGER.info("----- Get All Countries -----");
+		LOGGER.info("Start");
 
-		List<Country> countries = countryService.getAllCountries();
+		List<Country> countries = countryService.searchCountries("ou");
 
 		countries.forEach(country -> LOGGER.info("{}", country));
+
+		LOGGER.info("End");
 	}
 
-	private static void testGetCountry() {
+	/**
+	 * Search countries containing "ou" and sort in ascending order
+	 */
+	private static void testSearchCountrySorted() {
 
-		LOGGER.info("----- Get Country -----");
+		LOGGER.info("Start");
 
-		Country country = countryService.getCountry("IN");
-
-		LOGGER.info("{}", country);
-	}
-
-	private static void testAddCountry() {
-
-		LOGGER.info("----- Add Country -----");
-
-		Country country = new Country("XX", "Test Country");
-
-		countryService.addCountry(country);
-
-		LOGGER.info("Country Added Successfully");
-	}
-
-	private static void testUpdateCountry() {
-
-		LOGGER.info("----- Update Country -----");
-
-		Country country = new Country("XX", "Updated Test Country");
-
-		countryService.updateCountry(country);
-
-		LOGGER.info("Country Updated Successfully");
-	}
-
-	private static void testDeleteCountry() {
-
-		LOGGER.info("----- Delete Country -----");
-
-		countryService.deleteCountry("XX");
-
-		LOGGER.info("Country Deleted Successfully");
-	}
-
-	private static void testSearchCountries() {
-
-		LOGGER.info("----- Search Countries -----");
-
-		List<Country> countries =
-				countryService.searchCountries("Uni");
+		List<Country> countries = countryService.searchCountriesSorted("ou");
 
 		countries.forEach(country -> LOGGER.info("{}", country));
+
+		LOGGER.info("End");
+	}
+
+	/**
+	 * Search countries starting with "Z"
+	 */
+	private static void testSearchCountryStartingWith() {
+
+		LOGGER.info("Start");
+
+		List<Country> countries = countryService.searchCountriesStartingWith("Z");
+
+		countries.forEach(country -> LOGGER.info("{}", country));
+
+		LOGGER.info("End");
 	}
 }

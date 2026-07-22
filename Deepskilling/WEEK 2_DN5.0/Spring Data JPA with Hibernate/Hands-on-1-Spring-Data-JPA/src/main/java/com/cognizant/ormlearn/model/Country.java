@@ -16,6 +16,8 @@ public class Country {
     @Column(name = "co_name")
     private String name;
 
+    // Constructors
+
     public Country() {
     }
 
@@ -23,6 +25,8 @@ public class Country {
         this.code = code;
         this.name = name;
     }
+
+    // Getters & Setters
 
     public String getCode() {
         return code;
@@ -42,6 +46,6 @@ public class Country {
 
     @Override
     public String toString() {
-        return "Country [code=" + code + ", name=" + name + "]";
+        return code + " " + name;
     }
 }
