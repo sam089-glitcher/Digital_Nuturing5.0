@@ -15,6 +15,37 @@ public class CountryService {
     @Autowired
     private CountryRepository countryRepository;
 
+    // Find country by code
+    @Transactional(readOnly = true)
+    public Country getCountry(String code) {
+        return countryRepository.findById(code).orElse(null);
+    }
+
+    // Add new country
+    @Transactional
+    public void addCountry(Country country) {
+        countryRepository.save(country);
+    }
+
+    // Update country
+    @Transactional
+    public void updateCountry(Country country) {
+        countryRepository.save(country);
+    }
+
+    // Delete country
+    @Transactional
+    public void deleteCountry(String code) {
+        countryRepository.deleteById(code);
+    }
+
+    // Search countries by partial name
+    @Transactional(readOnly = true)
+    public List<Country> searchCountries(String name) {
+        return countryRepository.findByNameContainingIgnoreCase(name);
+    }
+
+    // Get all countries (optional but useful)
     @Transactional(readOnly = true)
     public List<Country> getAllCountries() {
         return countryRepository.findAll();

@@ -10,10 +10,10 @@ import jakarta.persistence.Table;
 public class Country {
 
     @Id
-    @Column(name = "code")
+    @Column(name = "co_code")
     private String code;
 
-    @Column(name = "name")
+    @Column(name = "co_name")
     private String name;
 
     public Country() {
