@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<countries>
+
+    <country>
+        <code>US</code>
+        <name>United States</name>
+    </country>
+
+    <country>
+        <code>DE</code>
+        <name>Germany</name>
+    </country>
+
+    <country>
+        <code>IN</code>
+        <name>India</name>
+    </country>
+
+    <country>
+        <code>JP</code>
+        <name>Japan</name>
+    </country>
+
+</countries>
