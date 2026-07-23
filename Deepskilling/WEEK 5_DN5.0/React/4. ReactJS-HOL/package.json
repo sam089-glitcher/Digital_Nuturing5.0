@@ -1,0 +1,10 @@
+{
+  "name": "react-hol-wrapper",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix blogapp start",
+    "install": "npm --prefix blogapp install",
+    "build": "npm --prefix blogapp run build",
+    "test": "npm --prefix blogapp run test"
+  }
+}
