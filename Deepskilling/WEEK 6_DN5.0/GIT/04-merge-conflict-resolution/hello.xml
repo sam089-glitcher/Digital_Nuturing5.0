@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<greeting>
+  <message>Hello from master and GitWork.</message>
+  <environment>production</environment>
+  <branch>GitWork</branch>
+  <status>Resolved through a three-way merge.</status>
+</greeting>

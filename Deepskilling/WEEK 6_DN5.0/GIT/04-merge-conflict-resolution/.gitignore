@@ -1,0 +1,4 @@
+# Conflict-resolution backup files
+*.orig
+*.bak
+*~
