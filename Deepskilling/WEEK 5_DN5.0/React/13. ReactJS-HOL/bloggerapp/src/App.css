@@ -1,0 +1,15 @@
+.container{
+    display:flex;
+    justify-content:space-around;
+    margin:30px;
+}
+
+.box{
+    width:30%;
+    border-left:4px solid green;
+    padding-left:20px;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+}
