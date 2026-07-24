@@ -1,0 +1,3 @@
+Welcome to Git!
+
+This file was added to demonstrate the first tracked file and commit in the GitDemo repository.
