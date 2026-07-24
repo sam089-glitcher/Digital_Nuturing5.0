@@ -1,0 +1,5 @@
+# Application log files
+*.log
+
+# Runtime log directory
+logs/
